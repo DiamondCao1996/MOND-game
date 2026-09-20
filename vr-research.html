@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOND · VR user-research prototype</title>
+<style>
+  /* MOND palette, shared with the pitch deck and product website. */
+  :root{
+    color-scheme:dark;
+    --bg:#111a30; --surface:#1b2740; --surface-2:#24314d; --ink:#f5f0e6;
+    --muted:#b7c2d8; --faint:#94a5c2; --border:#354563; --border-strong:#4a5e80;
+    --accent:#edd9a1; --accent-strong:#f3dfa6; --accent-wash:#2c3851;
+    --good:#a3cfbb; --warn:#edc67f; --crit:#eeaaa4;
+    --good-wash:#233e40; --warn-wash:#413b32; --crit-wash:#442e3b;
+    --trace:#edd9a1; --grid:#33425f;
+    --shadow:0 1px 2px rgba(4,10,24,.22),0 12px 32px -16px rgba(4,10,24,.55);
+    --radius:14px;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Consolas,monospace;
+  }
+  :root[data-theme="light"]{
+    color-scheme:light;
+    --bg:#eef2f8; --surface:#ffffff; --surface-2:#e6ecf6; --ink:#25324b;
+    --muted:#566984; --faint:#687d99; --border:#cfdaea; --border-strong:#b1c1d9;
+    --accent:#6379aa; --accent-strong:#425987; --accent-wash:#e1e8f6;
+    --good:#326f59; --warn:#8b641e; --crit:#a64c51;
+    --good-wash:#e1eee8; --warn-wash:#f4ebd7; --crit-wash:#f4e4e6;
+    --trace:#536ea5; --grid:#d9e2ef;
+    --shadow:0 1px 2px rgba(31,50,84,.06),0 12px 32px -16px rgba(31,50,84,.18);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 22px 60px;}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
+  h1,h2,h3{margin:0;text-wrap:balance;font-weight:650;letter-spacing:-.015em;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);font-weight:600;}
+
+  /* ---- Masthead ---- */
+  header.mast{display:flex;justify-content:space-between;align-items:flex-start;
+    gap:20px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--border);}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .glyph{width:34px;height:34px;flex:0 0 34px;}
+  .brand h1{font-size:18px;}
+  .brand .sub{font-size:12.5px;color:var(--muted);margin-top:1px;}
+  .sess{text-align:right;font-size:12.5px;color:var(--muted);}
+  .sess b{color:var(--ink);font-weight:600;}
+  .sess .ctx{display:inline-block;margin-top:4px;padding:2px 9px;border-radius:999px;
+    background:var(--accent-wash);color:var(--accent-strong);font-weight:600;
+    font-family:var(--mono);font-size:11.5px;}
+
+  /* ---- Status strip ---- */
+  .strip{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 22px;}
+  .chip{display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:12.5px;
+    box-shadow:var(--shadow);}
+  .chip .k{color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  .chip .v{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;}
+  .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px;}
+  .dot.good{background:var(--good)} .dot.warn{background:var(--warn)} .dot.crit{background:var(--crit)}
+
+  /* ---- AI Coach ---- */
+  .coach{margin-bottom:16px;border-left:3px solid var(--accent);}
+  .coach.gated{border-left-color:var(--warn);}
+  .coach-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+  .ai-badge{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;
+    color:var(--accent-strong);background:var(--accent-wash);padding:4px 9px;border-radius:6px;flex:0 0 auto;}
+  .coach.gated .ai-badge{color:var(--warn);background:var(--warn-wash);}
+  .coach-head h2{font-size:19px;}
+  .coach-msg{font-size:14.5px;line-height:1.6;margin:0 0 14px;max-width:70ch;}
+  .coach-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:20px;}
+  @media (max-width:720px){.coach-cols{grid-template-columns:1fr}}
+  .coach-actions ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:9px;}
+  .coach-actions li{font-size:13.5px;line-height:1.45;padding-left:18px;position:relative;}
+  .coach-actions li::before{content:"→";position:absolute;left:0;color:var(--accent-strong);font-weight:700;}
+  .coach-actions li small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px;}
+  .actuation{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;}
+  .actuation .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:4px;}
+  .actuation .act{font-weight:600;}
+  .coach-conf{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:10px;line-height:1.5;}
+
+  /* ---- Grid scaffold ---- */
+  .grid{display:grid;gap:16px;grid-template-columns:1.55fr 1fr;}
+  @media (max-width:820px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:20px;}
+  .card > .eyebrow{display:block;margin-bottom:12px;}
+
+  /* ---- Decision hero ---- */
+  .verdict{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px;}
+  .verdict h2{font-size:27px;}
+  .badge{font-family:var(--mono);font-size:12px;font-weight:600;padding:4px 10px;border-radius:8px;}
+  .badge.crit{background:var(--crit-wash);color:var(--crit)}
+  .badge.good{background:var(--good-wash);color:var(--good)}
+  .rulenote{font-size:12.5px;color:var(--muted);margin:2px 0 16px;}
+  .rulenote b{color:var(--ink);font-weight:600;}
+
+  .cond{display:grid;grid-template-columns:132px 1fr auto;align-items:center;gap:14px;
+    padding:12px 0;border-top:1px solid var(--border);}
+  .cond:first-of-type{border-top:none;}
+  .cond .clabel{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;}
+  .cond .tick{width:19px;height:19px;flex:0 0 19px;border-radius:5px;display:grid;place-items:center;
+    font-size:12px;font-weight:700;}
+  .cond .tick.met{background:var(--crit);color:#fff;}
+  .cond .tick.unmet{background:var(--surface-2);border:1px solid var(--border-strong);color:var(--faint);}
+  .cond .vals{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .cond .vals b{color:var(--ink);font-weight:600;}
+  .bar{position:relative;height:7px;border-radius:4px;background:var(--surface-2);
+    border:1px solid var(--border);overflow:hidden;margin-top:7px;}
+  .bar > i{position:absolute;inset:0 auto 0 0;border-radius:4px;background:var(--crit);}
+  .bar > .thr{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--faint);}
+  .cond .drop{font-family:var(--mono);font-weight:650;font-size:15px;text-align:right;color:var(--crit);
+    font-variant-numeric:tabular-nums;}
+  .cond .drop small{display:block;font-weight:500;font-size:10px;color:var(--muted);letter-spacing:.04em;}
+
+  /* ---- Gauges ---- */
+  .gauges{display:flex;flex-direction:column;gap:16px;}
+  .gauge{display:flex;align-items:center;gap:16px;}
+  .gauge canvas{width:96px;height:96px;flex:0 0 96px;}
+  .gauge .gl .eyebrow{margin-bottom:3px;}
+  .gauge .lvl{font-size:20px;font-weight:650;letter-spacing:-.02em;}
+  .gauge .gsub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .lvl.High{color:var(--crit)} .lvl.Moderate{color:var(--warn)} .lvl.Low{color:var(--good)}
+
+  /* ---- Metric tiles ---- */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px;}
+  @media (max-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 15px;
+    box-shadow:var(--shadow);}
+  .tile .tk{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+  .tile .tv{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:25px;font-weight:650;
+    letter-spacing:-.03em;margin-top:4px;line-height:1;}
+  .tile .tv u{font-size:12px;font-weight:500;text-decoration:none;color:var(--muted);margin-left:3px;}
+  .tile .td{font-family:var(--mono);font-size:11.5px;margin-top:7px;display:flex;align-items:center;gap:5px;}
+  .td .arw{font-weight:700;}
+  .td.adverse{color:var(--crit)} .td.favorable{color:var(--good)} .td.neutral{color:var(--muted)}
+  .tile .tbase{font-size:10.5px;color:var(--faint);font-family:var(--mono);margin-top:2px;}
+
+  /* ---- Score breakdown (how the number was computed) ---- */
+  .bd-cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;}
+  @media (max-width:720px){.bd-cols{grid-template-columns:1fr}}
+  .bd-title{font-size:15px;font-weight:650;margin-bottom:5px;}
+  .bd-title.High{color:var(--crit)} .bd-title.Moderate{color:var(--warn)} .bd-title.Low{color:var(--good)}
+  .bd-say{font-size:13px;margin:0 0 12px;line-height:1.55;}
+  .bd-row{display:grid;grid-template-columns:104px 1fr 30px;align-items:center;gap:10px;margin-top:9px;}
+  .bd-row .bd-l{font-size:12.5px;font-weight:600;}
+  .bd-row .bd-bar{height:9px;border-radius:5px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden;}
+  .bd-row .bd-bar>i{display:block;height:100%;border-radius:5px;background:var(--accent);}
+  .bd-row .bd-c{font-family:var(--mono);font-size:12px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .bd-sub{font-family:var(--mono);font-size:10.5px;color:var(--faint);margin:2px 0 0 114px;}
+  .bd-avg{margin-top:13px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;}
+  .bd-avg b{font-family:var(--mono);}
+  .bd-note{margin-top:18px;font-size:11.5px;color:var(--muted);line-height:1.55;}
+
+  /* ---- VR user-research example ---- */
+  .techeval{margin-top:16px;border-left:3px solid var(--accent);}
+  .te-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .te-head select{font-family:var(--sans);font-size:13px;padding:7px 11px;border-radius:9px;
+    border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);cursor:pointer;}
+  .te-empty{color:var(--muted);font-size:13px;}
+  .te-verdict{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;}
+  .te-pill{align-self:flex-start;font-family:var(--mono);font-size:12px;font-weight:700;
+    padding:4px 12px;border-radius:999px;letter-spacing:.02em;}
+  .te-pill.good{background:var(--good-wash);color:var(--good)}
+  .te-pill.warn{background:var(--warn-wash);color:var(--warn)}
+  .te-pill.crit{background:var(--crit-wash);color:var(--crit)}
+  .te-say{font-size:14px;line-height:1.6;margin:0;max-width:74ch;}
+  .te-say b{color:var(--ink);}
+  .te-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:22px;}
+  @media (max-width:720px){.te-grid{grid-template-columns:1fr}}
+  .te-act{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;height:fit-content;}
+  .te-act .act{font-weight:600;}
+  .lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:block;margin-bottom:5px;}
+  .te-refs{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:11px;}
+  .te-refs li{display:flex;gap:11px;}
+  .te-refs .mk{flex:0 0 auto;width:4px;border-radius:3px;background:var(--accent);opacity:.55;}
+  .rf-find{font-size:13px;line-height:1.5;}
+  .rf-cite{font-size:11px;color:var(--muted);margin-top:2px;}
+  .te-empty2{font-size:12.5px;color:var(--muted);font-style:italic;}
+
+  /* ---- Tabs + Habits page ---- */
+  .tabs{display:flex;gap:4px;margin:2px 0 16px;border-bottom:1px solid var(--border);}
+  .tab{appearance:none;background:none;border:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600;
+    color:var(--muted);padding:9px 15px;border-radius:10px 10px 0 0;position:relative;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--accent-strong);}
+  .tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;
+    background:var(--accent-strong);border-radius:2px;}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .hb-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+  .hb-title{font-size:20px;margin:3px 0 0;}
+  .hb-controls{display:flex;align-items:center;gap:16px;}
+  #hbMetric{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface);
+    border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px;cursor:pointer;}
+  .hb-toggle{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
+  .hb-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;}
+  @media (max-width:820px){.hb-grid{grid-template-columns:1fr}}
+  .hb-side{display:flex;flex-direction:column;gap:14px;}
+  .hb-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .hb-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;box-shadow:var(--shadow);}
+  .hb-stat .k{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .hb-stat .v{font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:3px;line-height:1;}
+  .hb-stat .s{font-size:11px;color:var(--muted);margin-top:3px;}
+  .hb-recentcard{padding:14px 16px;}
+  .hb-rec{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;
+    border-top:1px solid var(--border);font-size:12.5px;}
+  .hb-rec:first-of-type{border-top:none;}
+  .hb-rec .d{color:var(--ink);font-weight:600;} .hb-rec .t{color:var(--muted);font-family:var(--mono);font-size:11px;}
+  .hb-rec .val{font-weight:700;font-variant-numeric:tabular-nums;padding:2px 10px;border-radius:999px;color:var(--ink);}
+  .hb-main{display:flex;flex-direction:column;gap:16px;min-width:0;}
+  .hb-calwrap{overflow-x:auto;}
+  #hbCal{height:150px;display:block;}
+  #hbProg{width:100%;height:220px;display:block;}
+  .hb-legend{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:10px;font-size:11px;color:var(--muted);}
+  .hb-legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .hb-note{font-size:12px;color:var(--muted);line-height:1.5;}
+
+  /* ---- Confidence explainer ---- */
+  .confnote{font-size:12px;color:var(--muted);line-height:1.5;margin:-4px 2px 4px;}
+  .confnote b{color:var(--ink);}
+  .confnote.ok b{color:var(--accent-strong);}
+
+  /* ---- Teen-friendly check-in hero ---- */
+  .checkin{display:flex;gap:20px;align-items:center;margin-bottom:16px;padding:22px 24px;
+    border:1px solid var(--border);border-radius:20px;
+    background:linear-gradient(135deg,var(--accent-wash),var(--surface) 70%);box-shadow:var(--shadow);}
+  .checkin .mood{flex:0 0 auto;width:92px;height:92px;border-radius:24px;display:grid;place-items:center;
+    background:var(--surface);border:1px solid var(--border);box-shadow:0 4px 16px rgba(31,50,84,.14);}
+  .checkin .mood .emo{font-size:44px;line-height:1;}
+  .checkin .body{flex:1 1 auto;min-width:0;}
+  .checkin .vibe{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent-strong);font-weight:600;}
+  .checkin h2.ci-head{font-size:clamp(20px,3.2vw,26px);line-height:1.15;margin:3px 0 6px;
+    text-wrap:balance;color:var(--ink);}
+  .checkin .ci-say{font-size:14px;line-height:1.55;color:var(--ink);max-width:62ch;}
+  .checkin .ci-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+  .ci-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;
+    background:var(--surface);border:1px solid var(--border);font-size:12.5px;font-weight:600;color:var(--ink);}
+  .ci-chip .ci-emo{font-size:15px;}
+  .ci-chip .ci-lv{font-weight:800;}
+  .ci-chip.good{border-color:rgba(122,175,130,.55);} .ci-chip.good .ci-lv{color:#3f7a49;}
+  .ci-chip.warn{border-color:rgba(214,158,74,.6);}  .ci-chip.warn .ci-lv{color:#9a6a1a;}
+  .ci-chip.crit{border-color:rgba(200,90,90,.55);}  .ci-chip.crit .ci-lv{color:#a23b3b;}
+  @media (prefers-color-scheme:dark){
+    .ci-chip.good .ci-lv{color:#8fce99;} .ci-chip.warn .ci-lv{color:#e6bd77;} .ci-chip.crit .ci-lv{color:#f0a3a3;}
+  }
+  :root[data-theme="dark"] .ci-chip.good .ci-lv{color:#8fce99;}
+  :root[data-theme="dark"] .ci-chip.warn .ci-lv{color:#e6bd77;}
+  :root[data-theme="dark"] .ci-chip.crit .ci-lv{color:#f0a3a3;}
+  :root[data-theme="light"] .ci-chip.good .ci-lv{color:#3f7a49;}
+  :root[data-theme="light"] .ci-chip.warn .ci-lv{color:#9a6a1a;}
+  :root[data-theme="light"] .ci-chip.crit .ci-lv{color:#a23b3b;}
+  @media (max-width:560px){
+    .checkin{flex-direction:column;text-align:center;align-items:center;}
+    .checkin .ci-chips{justify-content:center;}
+  }
+  .ind-plain{font-size:12px;color:var(--muted);margin:3px 0 9px;line-height:1.45;}
+
+  /* ---- More physiological indicators ---- */
+  .indicators .ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px;}
+  @media (max-width:720px){.indicators .ind-grid{grid-template-columns:1fr}}
+  .ind-box{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .ind-h{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .ind-badge{display:inline-block;font-weight:650;font-size:14px;padding:3px 10px;border-radius:999px;
+    background:var(--accent-weak);color:var(--accent-strong);}
+  .ind-badge.good{background:rgba(122,175,130,.18);color:#3f7a49;}
+  .ind-badge.warn{background:rgba(214,158,74,.20);color:#9a6a1a;}
+  .ind-badge.crit{background:rgba(200,90,90,.18);color:#a23b3b;}
+  .ind-scale{position:relative;height:8px;border-radius:999px;margin:12px 0 6px;
+    background:linear-gradient(90deg,#7aaf82 0%,#d9c26a 55%,#c85a5a 100%);}
+  .ind-scale i{position:absolute;top:-3px;width:14px;height:14px;border-radius:50%;background:#fff;
+    border:2px solid var(--accent-strong);transform:translateX(-50%);box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .ind-sub{font-size:11.5px;color:var(--muted);line-height:1.5;}
+  .ind-rat{font-size:12px;line-height:1.5;margin-top:6px;}
+  .ind-rat b{color:var(--ink);}
+  .nl-table{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:2px;}
+  @media (max-width:560px){.nl-table{grid-template-columns:repeat(2,1fr)}}
+  .nl-cell{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:9px 10px;text-align:center;}
+  .nl-k{font-size:10.5px;color:var(--muted);}
+  .nl-v{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;}
+  .ind-anom{margin-top:12px;font-size:12px;color:#a23b3b;background:rgba(200,90,90,.10);
+    border:1px solid rgba(200,90,90,.35);border-radius:10px;padding:9px 12px;}
+  .ind-src{font-size:10.5px;color:var(--muted);margin-top:12px;font-family:var(--mono);}
+
+  /* ---- Suggestions for your next VR study ---- */
+  .design{margin-top:16px;}
+  .dg-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .dg-cond{font-family:var(--mono);font-size:11.5px;color:var(--accent-strong);}
+  .dg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:720px){.dg-grid{grid-template-columns:1fr}}
+  .dg-item{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:10px;padding:12px 14px;}
+  .dg-title{font-size:13.5px;font-weight:650;margin-bottom:4px;line-height:1.35;}
+  .dg-say{font-size:12.5px;line-height:1.5;}
+  .dg-refs{font-size:10.5px;color:var(--muted);margin-top:7px;font-family:var(--mono);}
+  .dg-empty{font-size:12.5px;color:var(--muted);}
+  .dg-note{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5;}
+
+  /* ---- Charts ---- */
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+  @media (max-width:820px){.charts{grid-template-columns:1fr}}
+  .chart h3{font-size:13.5px;font-weight:600;}
+  .chart .csub{font-size:12px;color:var(--muted);margin:1px 0 10px;}
+  .chart canvas{width:100%;height:150px;display:block;}
+
+  /* ---- History ---- */
+  .histgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:820px){.histgrid{grid-template-columns:1fr}}
+  .histchart h3{font-size:13px;font-weight:600;margin-bottom:8px;}
+  .histchart canvas{width:100%;height:120px;display:block;}
+  .histtable{margin-top:16px;overflow-x:auto;}
+  .histtable table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .histtable th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);text-align:left;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--border);}
+  .histtable td{padding:7px 10px;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums;}
+  .histtable td.mono{font-family:var(--mono);}
+  .histtable tr.cur td{background:var(--accent-wash);}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-family:var(--mono);font-size:11px;font-weight:600;}
+  .pill.High{background:var(--crit-wash);color:var(--crit)}
+  .pill.Moderate{background:var(--warn-wash);color:var(--warn)}
+  .pill.Low{background:var(--good-wash);color:var(--good)}
+
+  /* ---- Evidence ---- */
+  .why{margin-top:16px;}
+  .why h2{font-size:16px;margin-bottom:2px;}
+  .why .lead{font-size:13px;color:var(--muted);margin:0 0 16px;}
+  .evgroup{margin-bottom:14px;}
+  .evgroup .gh{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .evgroup .gh .tag{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;padding:3px 9px;border-radius:7px;}
+  .tag.stress{background:var(--crit-wash);color:var(--crit)}
+  .tag.fatigue{background:var(--warn-wash);color:var(--warn)}
+  .evgroup .gh .glvl{font-size:12.5px;color:var(--muted);font-family:var(--mono);}
+  ul.ev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+  ul.ev li{display:flex;gap:11px;font-size:13.5px;line-height:1.5;}
+  ul.ev li .mk{flex:0 0 auto;width:5px;border-radius:3px;background:var(--accent);opacity:.55;}
+  ul.ev li sup{font-family:var(--mono);color:var(--accent-strong);font-weight:600;font-size:10.5px;
+    margin-left:3px;}
+  .refs{margin-top:18px;border-top:1px solid var(--border);padding-top:14px;}
+  .refs ol{margin:8px 0 0;padding-left:0;list-style:none;counter-reset:r;
+    display:flex;flex-direction:column;gap:6px;}
+  .refs li{counter-increment:r;position:relative;padding-left:30px;font-size:12px;color:var(--muted);line-height:1.45;}
+  .refs li::before{content:"["counter(r)"]";position:absolute;left:0;top:0;font-family:var(--mono);
+    color:var(--accent-strong);font-weight:600;font-size:11px;}
+
+  /* ---- Footer ---- */
+  footer{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:820px){footer{grid-template-columns:1fr}}
+  .note{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .note h4{margin:0 0 8px;font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);}
+  .note ul{margin:0;padding-left:18px;font-size:12.5px;color:var(--muted);line-height:1.55;}
+  .note li{margin-bottom:5px;}
+  .note li b{color:var(--ink);font-weight:600;}
+  .toggle{position:fixed;top:14px;right:14px;background:var(--surface);border:1px solid var(--border);
+    color:var(--muted);border-radius:9px;padding:7px 11px;font-size:12px;cursor:pointer;font-family:var(--mono);
+    box-shadow:var(--shadow);}
+  .toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .sect-h{margin:34px 0 4px;font-size:12px;}
+
+  /* Warm serif titles sit beside clear, familiar data typography. */
+  header.mast h1,.checkin h2.ci-head{font-family:Georgia,"Times New Roman",serif;font-weight:400;letter-spacing:-.025em;}
+  .ci-chip.good .ci-lv,.ind-badge.good{color:var(--good)!important;}
+  .ci-chip.warn .ci-lv,.ind-badge.warn{color:var(--warn)!important;}
+  .ci-chip.crit .ci-lv,.ind-badge.crit{color:var(--crit)!important;}
+  .ind-badge.good{background:var(--good-wash);}
+  .ind-badge.warn{background:var(--warn-wash);}
+  .ind-badge.crit,.ind-anom{background:var(--crit-wash);color:var(--crit);}
+  .ind-scale{background:linear-gradient(90deg,var(--good) 0%,var(--warn) 55%,var(--crit) 100%);}
+  .cond .tick.met{color:var(--bg);}
+  button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;}
+.vr-demo-note{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:17px 20px;margin:0 0 18px;border:1px solid var(--accent);border-radius:16px;background:var(--surface);font-size:13px;line-height:1.5}.vr-demo-note strong{color:var(--accent)}.vr-demo-note span{flex:1;min-width:200px}.vr-demo-note a,.dg-refs a{color:var(--accent);text-underline-offset:3px}.techeval{scroll-margin-top:20px}.design{margin-bottom:20px}</style>
+</head>
+<body>
+<a href="./#research" style="display:inline-block;margin:18px 24px;color:inherit;text-underline-offset:5px">← MOND / Back to user research / 返回用户研究</a>
+
+<button class="toggle" id="themeBtn" aria-label="Toggle light or dark theme">◐ theme</button>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="brand">
+      <svg class="glyph" viewBox="0 0 34 34" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="32" height="32" rx="9" fill="var(--accent-wash)" stroke="var(--accent)" stroke-width="1.3"/>
+        <path d="M4 18 h5 l2.4 -8 4.2 15 3-11 2 5 h7.4" stroke="var(--accent-strong)"
+              stroke-width="2" stroke-linjoin="round" stroke-linecap="round" fill="none"/>
+      </svg>
+      <div>
+        <h1>HRV Sensor</h1>
+        <div class="sub">Your body &amp; mind check-in · explainable HRV</div>
+      </div>
+    </div>
+    <div class="sess">
+      Session <b class="mono" id="sTime"></b><br>
+      Participant <b class="mono" id="sUser"></b> · <b class="mono" id="sBeats"></b> beats<br>
+      <span class="ctx" id="sCtx"></span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" id="tabSession" type="button" onclick="showPage('session')">This session</button>
+    <button class="tab" id="tabHabits" type="button" onclick="showPage('habits')">Habits &amp; trends</button>
+  </nav>
+
+  <div id="pageSession">
+  <div class="strip" id="strip"></div>
+  <div class="confnote" id="confNote"></div>
+
+  <aside class="vr-demo-note"><strong>VR user-research demo</strong><span>Existing sample physiology is shown in a VR workflow. This is not a recorded VR experiment or a live sensor reading.</span><a href="#techCard">See VR suggestions ↓</a></aside>
+  <section class="card techeval" id="techCard">
+    <div class="te-head">
+      <span class="eyebrow">VR user-research example</span>
+      <select id="techSelect" aria-label="Technology used in this session"></select>
+    </div>
+    <div id="techBody" class="te-empty">Pick the technology you were using to see a human-centred evaluation of it, based on your physiology.</div>
+  </section>
+
+  <section class="card design" id="designCard">
+    <div class="dg-head">
+      <span class="eyebrow">Suggestions for your next VR study</span>
+      <span class="dg-cond" id="designCond"></span>
+    </div>
+    <div class="dg-grid" id="designBody"></div>
+    <div class="dg-note" id="designNote"></div>
+  </section>
+  <section class="checkin" id="checkin" aria-label="Your check-in"></section>
+
+  <section class="card coach" id="coachCard" aria-labelledby="coachH">
+    <div class="coach-head">
+      <span class="ai-badge">AI COACH</span>
+      <h2 id="coachH"></h2>
+    </div>
+    <p class="coach-msg" id="coachMsg"></p>
+    <div class="coach-cols">
+      <div class="coach-actions">
+        <span class="eyebrow">Recommended</span>
+        <ul id="coachActions"></ul>
+      </div>
+      <div class="coach-side">
+        <div class="actuation" id="coachActuation"></div>
+        <div class="coach-conf" id="coachConf"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <!-- Decision hero -->
+    <section class="card" aria-labelledby="dech">
+      <span class="eyebrow" id="dech">Explainable decision</span>
+      <div class="verdict">
+        <h2 id="vTitle"></h2>
+        <span class="badge" id="vBadge"></span>
+      </div>
+      <p class="rulenote" id="vNote"></p>
+      <div id="conds"></div>
+    </section>
+
+    <!-- Gauges -->
+    <section class="card">
+      <span class="eyebrow">State indices <span style="text-transform:none;letter-spacing:0">· baseline-relative</span></span>
+      <div class="gauges" id="gauges"></div>
+    </section>
+  </div>
+
+  <section class="card breakdown" id="breakdownCard">
+    <span class="eyebrow" style="display:block;margin-bottom:14px;">How your scores were calculated</span>
+    <div class="bd-cols">
+      <div class="bd-col" id="bdStress"></div>
+      <div class="bd-col" id="bdFatigue"></div>
+    </div>
+    <div class="bd-note">Each score is the <b>average</b> of its components. A component measures how far a metric moved from <b>your own resting baseline</b> toward stress/fatigue, capped at a full-scale move (shown per row). A capped bar (100) means that signal was already at or beyond full scale. Heuristic estimate — not a medical measurement.</div>
+  </section>
+
+  <section class="card indicators" id="indicatorsCard">
+    <span class="eyebrow" style="display:block;margin-bottom:14px;">More physiological indicators</span>
+    <div class="ind-grid">
+      <div class="ind-box" id="indState"></div>
+      <div class="ind-box" id="indCog"></div>
+      <div class="ind-box" id="indEmotion"></div>
+      <div class="ind-box" id="indBalance"></div>
+      <div class="ind-box" id="indComplex"></div>
+    </div>
+    <div class="ind-h">Nonlinear &amp; fractal HRV</div>
+    <div class="nl-table" id="nlTable"></div>
+    <div id="indAnom"></div>
+    <div class="ind-src" id="indSrc"></div>
+  </section>
+
+  <div class="tiles" id="tiles"></div>
+
+
+
+  <div class="charts">
+    <section class="card chart">
+      <h3>R-R tachogram</h3>
+      <div class="csub">Cleaned beat-to-beat intervals · <span class="mono" id="chDur"></span></div>
+      <canvas id="tacho" aria-label="R-R interval trace over the session"></canvas>
+    </section>
+    <section class="card chart">
+      <h3>RMSSD trend</h3>
+      <div class="csub">Windowed vagal tone · <span class="mono" id="chSlope"></span></div>
+      <canvas id="trend" aria-label="Windowed RMSSD over the session"></canvas>
+    </section>
+  </div>
+
+  <section class="card hist" id="histCard" style="margin-top:16px;display:none;">
+    <span class="eyebrow" style="display:block;margin-bottom:12px;">Trend across sessions
+      <span style="text-transform:none;letter-spacing:0" id="histCount"></span></span>
+    <div class="histgrid">
+      <div class="histchart">
+        <h3>Stress</h3>
+        <canvas id="hStress" aria-label="Stress score across recent sessions"></canvas>
+      </div>
+      <div class="histchart">
+        <h3>Fatigue</h3>
+        <canvas id="hFatigue" aria-label="Fatigue score across recent sessions"></canvas>
+      </div>
+    </div>
+    <div class="histtable" id="histTable"></div>
+  </section>
+
+  <section class="card why">
+    <h2>Background to the prototype</h2>
+    <p class="lead">These are the prototype’s background descriptions and references, not a list of conditions met in this sample. The three evaluated threshold checks are shown above under Explainable decision.</p>
+    <div id="evStress"></div>
+    <div id="evFatigue"></div>
+    <div class="refs">
+      <span class="eyebrow">Prototype reference list</span>
+      <ol id="refList"></ol>
+    </div>
+  </section>
+
+  <footer>
+    <div class="note">
+      <h4>New in v2</h4>
+      <ul id="whatsnew"></ul>
+    </div>
+    <div class="note">
+      <h4>Limitations</h4>
+      <ul id="limits"></ul>
+    </div>
+  </footer>
+  </div><!-- /pageSession -->
+
+  <section id="pageHabits" style="display:none">
+    <div class="hb-head">
+      <div>
+        <span class="eyebrow">Habits &amp; trends</span>
+        <h2 class="hb-title" id="hbTitle">Your patterns over time</h2>
+      </div>
+      <div class="hb-controls">
+        <select id="hbMetric" aria-label="Metric"></select>
+        <label class="hb-toggle"><input type="checkbox" id="hbActive" checked> Hide empty weeks</label>
+      </div>
+    </div>
+    <div class="hb-grid">
+      <aside class="hb-side">
+        <div class="hb-stats" id="hbStats"></div>
+        <section class="card hb-recentcard">
+          <span class="eyebrow" style="display:block;margin-bottom:10px;">Recent sessions</span>
+          <div id="hbRecent"></div>
+        </section>
+      </aside>
+      <main class="hb-main">
+        <section class="card">
+          <span class="eyebrow" id="hbCalTitle" style="display:block;margin-bottom:12px;">Session calendar</span>
+          <div class="hb-calwrap"><canvas id="hbCal" aria-label="Calendar heatmap"></canvas></div>
+          <div class="hb-legend" id="hbLegend"></div>
+        </section>
+        <section class="card">
+          <span class="eyebrow" id="hbProgTitle" style="display:block;margin-bottom:12px;">Weekly progress</span>
+          <canvas id="hbProg" aria-label="Weekly progress"></canvas>
+        </section>
+        <div class="hb-note" id="hbNote"></div>
+      </main>
+    </div>
+  </section>
+</div>
+
+<script id="payload" type="application/json">{"session": {"context": "VR assembly training · illustrative research scenario", "analyzed_at": "2026-08-03 15:12:50", "user": "demo (sample data)", "beats_used": 398, "beats_raw": 398, "signal_quality": {"artifact_ratio": 0.0, "beats_used": 398, "duration_s": 284.35169999999994, "sqi_score": 100.0, "sqi_level": "good", "usable": true}, "respiration": {"resp_rate_bpm": 18.75, "hf_respiration_confounded": false}, "time_domain": {"n_beats": 398, "duration_s": 284.35169999999994, "mean_rr_ms": 714.4515075376884, "mean_hr_bpm": 83.9805072380436, "sdnn_ms": 21.412381014121195, "rmssd_ms": 22.921329149392953, "pnn50_pct": 1.5113350125944585, "cvnn_pct": 2.9970376979002538, "stdv_ms": 21.412381014121195}, "freq_domain": {"vlf_power_ms2": 2.431017590794963, "lf_power_ms2": 16.27658257718458, "hf_power_ms2": 182.84083521823496, "total_power_ms2": 201.5484353862145, "lf_hf_ratio": 0.08902050003084483, "lf_nu": 8.174364029724277, "hf_nu": 91.82563597027573, "reliable": true}, "baevsky_stress_index": 408.995858060388, "threshold_rule": {"name": "personalized 2-of-3 vagal-withdrawal rule", "applicable": true, "stress": true, "n_conditions_met": 3, "n_required": 2, "conditions": [{"label": "RMSSD ↓", "rule_id": "rmssd_drop_vs_baseline", "observed": 22.921329149392953, "baseline": 58.804015897847364, "unit": "ms", "drop_pct": 61.020809889563964, "threshold_pct": 20.0, "met": true, "evaluable": true}, {"label": "HF power ↓", "rule_id": "hf_drop_vs_baseline", "observed": 182.84083521823496, "baseline": 1078.526735968616, "unit": "ms²", "drop_pct": 83.04716711041688, "threshold_pct": 30.0, "met": true, "evaluable": true}, {"label": "stdV ↓", "rule_id": "stdv_drop_vs_baseline", "observed": 21.412381014121195, "baseline": 43.398461842041975, "unit": "ms", "drop_pct": 50.66096791159062, "threshold_pct": 20.0, "met": true, "evaluable": true}], "fired_rules": ["rmssd_drop_vs_baseline", "hf_drop_vs_baseline", "stdv_drop_vs_baseline"]}, "baseline": {"recorded_at": "2026-08-03 15:12:41", "rmssd_ms": 58.804015897847364, "sdnn_ms": 43.398461842041975, "stdv_ms": 43.398461842041975, "mean_hr_bpm": 63.18007721565132, "hf_power_ms2": 1078.526735968616, "lf_hf_ratio": 0.120322748603806, "stress_index": 87.29061672007869}, "stress_fatigue": {"stress_score": 66.66666666666666, "stress_level": "High", "fatigue_score": 78.99065684355008, "fatigue_level": "High", "confidence": "moderate", "gated": false, "baseline_used": true, "evidence": [{"rule": "rmssd_drop_vs_baseline", "outcome": "stress", "statement": "RMSSD reduced relative to the user's resting baseline indicates parasympathetic (vagal) withdrawal, a core physiological signature of acute stress.", "citations": ["Kim H.G., Cheon E.J., Bai D.S., Lee Y.H. & Koo B.H. (2018). Stress and heart rate variability: a meta-analysis and review of the literature. Psychiatry Investigation, 15(3), 235-245.", "Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Tjonnas M.S. et al. (2024). Stress responses in surgical trainees during simulation-based training courses. BMC Medical Education, 24, 407.", "Robbemond L.M. et al. (2026). Physiological responses to virtual reality-based stress regulation and relaxation: a systematic review. Stress and Health, 42."]}, {"rule": "lfhf_rise_vs_baseline", "outcome": "stress", "statement": "LF/HF elevated relative to baseline indicates a shift toward sympathetic dominance under load, consistent with stress and higher mental workload in technology-mediated tasks.", "citations": ["Kim H.G., Cheon E.J., Bai D.S., Lee Y.H. & Koo B.H. (2018). Stress and heart rate variability: a meta-analysis and review of the literature. Psychiatry Investigation, 15(3), 235-245.", "Tjonnas M.S. et al. (2024). Stress responses in surgical trainees during simulation-based training courses. BMC Medical Education, 24, 407.", "Chao et al. (2017). Effects of three-dimensional virtual reality and traditional training methods on mental workload and training performance. Human Factors and Ergonomics in Manufacturing, 27(4).", "Tronchot et al. (2024). The influence of virtual reality simulation on surgical residents' heart rate variability. Orthopaedics & Traumatology: Surgery & Research, 110.", "Baressi Segota et al. (2026). Interpretable multimodal framework for assessing cognitive load and stress in human-robot collaboration. AHFE 2026."]}, {"rule": "si_rise_vs_baseline", "outcome": "stress", "statement": "Baevsky Stress Index elevated relative to baseline reflects reduced variability and centralized sympathetic regulation.", "citations": ["Baevsky R.M. & Chernikova A.G. (2017). Heart rate variability analysis: physiological foundations and main methods. Cardiometry, 10, 66-76.", "Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258."]}, {"rule": "hf_drop_vs_baseline", "outcome": "stress", "statement": "High-frequency (HF) power reduced relative to the user's resting baseline indicates suppressed respiratory sinus arrhythmia and parasympathetic withdrawal, a consistently reported marker of acute mental stress.", "citations": ["Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Kim H.G., Cheon E.J., Bai D.S., Lee Y.H. & Koo B.H. (2018). Stress and heart rate variability: a meta-analysis and review of the literature. Psychiatry Investigation, 15(3), 235-245.", "Prajwal et al. (2026). An explainable multimodal deep learning approach for stress detection. Discover Applied Sciences.", "Can Y.S. (2026). LLM-assisted explainable daily stress recognition: physiologically grounded thresholds. Electronics, 15(1), 201."]}, {"rule": "stdv_drop_vs_baseline", "outcome": "stress", "statement": "Reduced beat-to-beat variability (stdV, the SD of the instantaneous R-R series) below baseline reflects diminished short-term parasympathetic modulation of cardiac rhythm under stress.", "citations": ["Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Can Y.S. (2026). LLM-assisted explainable daily stress recognition: physiologically grounded thresholds. Electronics, 15(1), 201."]}, {"rule": "rmssd_drop_fatigue", "outcome": "fatigue", "statement": "Sustained RMSSD suppression below baseline reflects prolonged vagal withdrawal, associated with mental fatigue and reduced recovery capacity.", "citations": ["Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Kim H.G., Cheon E.J., Bai D.S., Lee Y.H. & Koo B.H. (2018). Stress and heart rate variability: a meta-analysis and review of the literature. Psychiatry Investigation, 15(3), 235-245.", "Yamashita et al. (2026). Assessing surgeons' physiological fatigue during robot-assisted surgery tasks using a 3D visualization system. IEVC 2026."]}, {"rule": "sdnn_drop_vs_baseline", "outcome": "fatigue", "statement": "Reduced overall variability (SDNN) sustained below baseline reflects diminished autonomic adaptability associated with fatigue.", "citations": ["Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Tjonnas M.S. et al. (2024). Stress responses in surgical trainees during simulation-based training courses. BMC Medical Education, 24, 407."]}, {"rule": "hr_rise_vs_baseline", "outcome": "fatigue", "statement": "Elevated mean heart rate relative to baseline indicates sustained sympathetic drive / vagal withdrawal contributing to fatigue.", "citations": ["Tronchot et al. (2024). The influence of virtual reality simulation on surgical residents' heart rate variability. Orthopaedics & Traumatology: Surgery & Research, 110.", "Robbemond L.M. et al. (2026). Physiological responses to virtual reality-based stress regulation and relaxation: a systematic review. Stress and Health, 42."]}, {"rule": "rmssd_downward_trend", "outcome": "fatigue", "statement": "A progressive within-session decline in RMSSD indicates accumulating vagal withdrawal over time, a marker of developing fatigue during sustained technology use.", "citations": ["Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "Yamashita et al. (2026). Assessing surgeons' physiological fatigue during robot-assisted surgery tasks using a 3D visualization system. IEVC 2026."]}], "references": {"kim_2018": "Kim H.G., Cheon E.J., Bai D.S., Lee Y.H. & Koo B.H. (2018). Stress and heart rate variability: a meta-analysis and review of the literature. Psychiatry Investigation, 15(3), 235-245.", "shaffer_2017": "Shaffer F. & Ginsberg J.P. (2017). An overview of heart rate variability metrics and norms. Frontiers in Public Health, 5, 258.", "tjonnas_2024": "Tjonnas M.S. et al. (2024). Stress responses in surgical trainees during simulation-based training courses. BMC Medical Education, 24, 407.", "robbemond_2026": "Robbemond L.M. et al. (2026). Physiological responses to virtual reality-based stress regulation and relaxation: a systematic review. Stress and Health, 42.", "chao_2017": "Chao et al. (2017). Effects of three-dimensional virtual reality and traditional training methods on mental workload and training performance. Human Factors and Ergonomics in Manufacturing, 27(4).", "tronchot_2024": "Tronchot et al. (2024). The influence of virtual reality simulation on surgical residents' heart rate variability. Orthopaedics & Traumatology: Surgery & Research, 110.", "baressi_segota_2026": "Baressi Segota et al. (2026). Interpretable multimodal framework for assessing cognitive load and stress in human-robot collaboration. AHFE 2026.", "baevsky_2017": "Baevsky R.M. & Chernikova A.G. (2017). Heart rate variability analysis: physiological foundations and main methods. Cardiometry, 10, 66-76.", "prajwal_2026": "Prajwal et al. (2026). An explainable multimodal deep learning approach for stress detection. Discover Applied Sciences.", "can_2026": "Can Y.S. (2026). LLM-assisted explainable daily stress recognition: physiologically grounded thresholds. Electronics, 15(1), 201.", "yamashita_2026": "Yamashita et al. (2026). Assessing surgeons' physiological fatigue during robot-assisted surgery tasks using a 3D visualization system. IEVC 2026."}, "notes": []}, "rmssd_trend": {"slope_per_min": -0.01596262737420032, "windows": [25.49, 23.86, 23.37, 21.2, 22.27, 22.98, 23.2, 23.96, 24.08, 23.77, 22.18, 23.22, 24.96, 23.75, 22.77, 20.69, 21.45], "window_centers_s": [22.8, 37.4, 52.0, 66.5, 81.0, 95.4, 109.9, 124.3, 138.6, 152.9, 167.1, 181.3, 195.4, 209.6, 223.6, 237.7, 251.6]}, "tachogram": {"t": [0.8, 3.0, 5.2, 8.1, 10.3, 12.5, 15.4, 17.7, 19.8, 22.8, 25.0, 27.2, 30.1, 32.3, 34.5, 37.4, 39.6, 41.8, 44.8, 46.9, 49.1, 52.0, 54.2, 56.4, 59.3, 61.5, 63.7, 66.5, 68.6, 70.9, 73.8, 75.9, 78.1, 81.0, 83.2, 85.3, 88.2, 90.4, 92.5, 95.4, 97.6, 99.8, 102.7, 104.8, 107.0, 109.9, 112.0, 114.2, 117.1, 119.3, 121.4, 124.3, 126.4, 128.6, 131.4, 133.5, 135.7, 138.6, 140.7, 142.9, 145.7, 147.9, 150.0, 152.9, 155.0, 157.2, 160.0, 162.1, 164.3, 167.1, 169.3, 171.4, 174.2, 176.3, 178.5, 181.3, 183.4, 185.6, 188.4, 190.5, 192.6, 195.4, 197.6, 199.7, 202.5, 204.6, 206.8, 209.6, 211.6, 213.8, 216.6, 218.7, 220.8, 223.6, 225.7, 227.8, 230.6, 232.8, 234.9, 237.7, 239.8, 241.9, 244.7, 246.8, 248.9, 251.6, 253.7, 255.9, 258.7, 260.8, 262.9, 265.7, 267.7, 269.8, 272.6, 274.6, 276.7, 279.5, 281.6, 284.4], "rr": [762.2, 728.8, 713.5, 724.5, 752.4, 732.6, 720.0, 747.0, 755.7, 747.1, 722.8, 747.6, 754.4, 720.1, 712.2, 747.2, 749.3, 690.2, 724.4, 729.9, 732.7, 714.5, 729.9, 748.3, 738.5, 712.0, 745.7, 722.1, 716.3, 725.9, 717.7, 732.0, 723.1, 709.9, 748.2, 715.0, 714.6, 711.6, 738.5, 737.6, 702.6, 721.4, 731.0, 706.1, 724.7, 713.8, 743.5, 691.2, 713.6, 731.3, 727.9, 712.6, 704.2, 733.7, 740.2, 668.1, 726.2, 729.9, 723.1, 691.8, 701.0, 747.4, 700.6, 684.7, 708.9, 732.9, 698.7, 697.2, 721.8, 733.8, 692.6, 703.6, 729.3, 722.2, 685.7, 701.2, 731.0, 708.9, 677.8, 723.8, 711.0, 707.3, 679.8, 734.1, 719.1, 683.7, 710.2, 721.2, 703.4, 688.5, 694.4, 729.0, 707.5, 710.1, 705.7, 705.7, 709.9, 682.3, 702.8, 719.1, 692.7, 699.4, 711.1, 708.4, 685.3, 689.3, 727.3, 719.6, 716.2, 674.7, 708.5, 726.9, 678.8, 679.7, 692.4, 699.6, 674.3, 669.0, 701.4, 703.7]}}, "history": [], "tech_options": [{"key": "vr", "label": "Virtual Reality (VR)", "action": "Try a comfort-focused movement mode and participant-controlled instructions. Test each change separately before combining them.", "refs": []}], "design_guidance": [{"id": "vr-locomotion", "title": "Offer comfortable movement controls", "guidance": "Provide teleportation and snap turning as choices. Avoid unexpected camera motion. Compare participants’ comfort and task performance across movement modes.", "tech": ["vr"], "applies_to": ["stress_high", "fatigue_high"], "refs": [{"cite": "Meta Horizon: Comfort", "url": "https://developers.meta.com/horizon/design/comfort/"}]}, {"id": "vr-reach", "title": "Reduce repeated reaching and head turns", "guidance": "Keep frequent controls within comfortable reach and place important content where users can see it without repeated large head movements. Ask which interactions feel tiring.", "tech": ["vr"], "applies_to": ["stress_high", "fatigue_high"], "refs": [{"cite": "Microsoft: Comfort in mixed reality", "url": "https://learn.microsoft.com/en-us/windows/mixed-reality/design/comfort"}]}, {"id": "vr-pace", "title": "Test a calmer instruction pace", "guidance": "Research hypothesis: show one assembly step at a time and let the participant pause or repeat it. Compare errors, completion time and perceived workload with the current instruction design.", "tech": ["vr"], "applies_to": ["stress_high", "fatigue_high"], "refs": [{"cite": "MOND proposed user-research test"}]}, {"id": "vr-study", "title": "Compare designs under matched conditions", "guidance": "Research proposal: alternate the order of versions A and B, keep task duration and posture comparable, and record a resting baseline. Review HRV with contact quality, movement, participant feedback and task performance.", "tech": ["vr"], "applies_to": ["stress_high", "fatigue_high"], "refs": [{"cite": "MOND proposed study protocol"}]}]}</script>
+<script>
+const DATA0 = JSON.parse(document.getElementById('payload').textContent);
+const DATA = DATA0.session || DATA0;   // {session, history} payload, or a flat single-session one
+const H = DATA0.history || [];         // per-user session history (oldest -> newest)
+const TECH = DATA0.tech_options || []; // technologies + adaptation + benchmark evidence
+const DESIGN = DATA0.design_guidance || []; // universal design principles (corpus-derived)
+const $ = s => document.querySelector(s);
+const fmt = (v,d=1)=> (v==null||isNaN(v)) ? '—' : Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- Header + status strip ---------- */
+$('#sTime').textContent = DATA.analyzed_at;
+$('#sUser').textContent = DATA.user || '—';
+$('#sBeats').textContent = DATA.beats_used;
+$('#sCtx').textContent = DATA.context || 'unlabelled';
+
+const sq = DATA.signal_quality, sf = DATA.stress_fatigue, resp = DATA.respiration;
+const sqCls = sq.sqi_level==='good'?'good':sq.sqi_level==='fair'?'warn':'crit';
+const confCls = sf.confidence==='high'?'good':sf.confidence==='moderate'?'warn':sf.confidence==='low'?'crit':'good';
+const strip = [
+  {k:'Signal',   v:`${sq.sqi_level} · ${fmt(sq.sqi_score,0)}`, dot:sqCls},
+  {k:'Confidence', v:sf.confidence, dot:confCls, title:(sf.confidence_reason||'')},
+  {k:'Baseline', v:sf.baseline_used?'referenced':'none', dot:sf.baseline_used?'good':'warn'},
+  {k:'Duration', v:`${fmt(sq.duration_s/60,1)} min`, dot:null},
+  {k:'Artifacts', v:`${fmt(sq.artifact_ratio*100,1)}%`, dot:null},
+  {k:'Respiration', v:`${fmt(resp.resp_rate_bpm,0)}/min`, dot:resp.hf_respiration_confounded?'warn':null},
+];
+$('#strip').innerHTML = strip.map(c=>`<div class="chip"${c.title?` title="${c.title}"`:''}>${c.dot?`<span class="dot ${c.dot}"></span>`:''}<span class="k">${c.k}</span><span class="v">${c.v}</span></div>`).join('');
+
+// Plain-language "why this confidence" line, with how to raise it.
+(function(){
+  const el=$('#confNote'); if(!el) return;
+  const r=sf.confidence_reason||'';
+  if(sf.confidence==='high'){
+    el.className='confnote ok';
+    el.innerHTML=`✓ <b>High confidence</b>${r?` — ${r}`:''}.`;
+  } else {
+    el.className='confnote';
+    el.innerHTML=`<b>Confidence: ${sf.confidence||'—'}</b>${r?` — ${r}`:''}. `+
+      `To raise it: set a resting baseline for this user, record ≥ 2–3 min, and keep the signal clean (Signal: good).`;
+  }
+})();
+
+/* ---------- AI Coach (the AI-agent turn on the affective-state object) ---------- */
+const agent = DATA.agent;
+if (agent) {
+  if (agent.gated) $('#coachCard').classList.add('gated');
+  $('#coachH').textContent = agent.headline || '';
+  $('#coachMsg').textContent = agent.message || '';
+  $('#coachActions').innerHTML = (agent.actions || []).map(a =>
+    `<li>${a.text}<small>${a.why || ''}</small></li>`).join('') || '<li>No action needed.</li>';
+  $('#coachActuation').innerHTML =
+    `<span class="lbl">Suggested device action</span><span class="act">${agent.actuation || ''}</span>`;
+  const src = agent.message_source && agent.message_source.startsWith('llm')
+    ? ' · phrased by AI' : '';
+  $('#coachConf').textContent = (agent.confidence_note || '') + src;
+} else {
+  $('#coachCard').style.display = 'none';
+}
+
+/* ---------- Decision hero ---------- */
+const tr = DATA.threshold_rule;
+const stressed = tr.stress===true;
+$('#vTitle').textContent = stressed ? 'Stress detected' : 'No stress detected';
+const vb = $('#vBadge'); vb.textContent = `${tr.n_conditions_met} of ${tr.conditions.length} conditions met · threshold ${tr.n_required}`;
+vb.className = 'badge ' + (stressed?'crit':'good');
+$('#vNote').innerHTML = `Rule: fire when at least <b>${tr.n_required}</b> of <b>${tr.conditions.length}</b> vagal-withdrawal conditions fall below the participant's own resting baseline — <b>${tr.name}</b>.`;
+
+$('#conds').innerHTML = tr.conditions.map(c=>{
+  const drop = c.drop_pct, thr = c.threshold_pct;
+  const fill = Math.max(0, Math.min(100, drop==null?0:drop));
+  const thrPos = Math.min(100, thr);
+  return `<div class="cond">
+    <div class="clabel"><span class="tick ${c.met?'met':'unmet'}">${c.met?'✓':'·'}</span>${c.label}</div>
+    <div>
+      <div class="vals">now <b>${fmt(c.observed, c.unit==='ms²'?0:1)}${c.unit}</b> · base <b>${fmt(c.baseline, c.unit==='ms²'?0:1)}${c.unit}</b> · fires at −${fmt(thr,0)}%</div>
+      <div class="bar"><i style="width:${fill}%"></i><span class="thr" style="left:${thrPos}%"></span></div>
+    </div>
+    <div class="drop">▼${fmt(drop,0)}%<small>vs base</small></div>
+  </div>`;
+}).join('');
+
+/* ---------- Gauges (stress + fatigue) ---------- */
+function gauge(val, level){
+  const c = document.createElement('canvas'); const dpr = window.devicePixelRatio||1;
+  c.width=96*dpr; c.height=96*dpr; const x=c.getContext('2d'); x.scale(dpr,dpr);
+  const col = level==='High'?css('--crit'):level==='Moderate'?css('--warn'):css('--good');
+  const cx=48,cy=48,r=38,lw=9, start=Math.PI*0.75, end=Math.PI*2.25;
+  x.lineCap='round'; x.lineWidth=lw;
+  x.strokeStyle=css('--surface-2'); x.beginPath(); x.arc(cx,cy,r,start,end); x.stroke();
+  const frac=Math.max(0,Math.min(1,(val||0)/100));
+  x.strokeStyle=col; x.beginPath(); x.arc(cx,cy,r,start,start+(end-start)*frac); x.stroke();
+  x.fillStyle=css('--ink'); x.font='650 22px '+css('--mono'); x.textAlign='center'; x.textBaseline='middle';
+  x.fillText(val==null?'—':Math.round(val), cx, cy-2);
+  x.fillStyle=css('--muted'); x.font='500 9px '+css('--mono'); x.fillText('/ 100', cx, cy+14);
+  return c;
+}
+function renderGauges(){
+  const g = $('#gauges'); g.innerHTML='';
+  [['Stress',sf.stress_score,sf.stress_level],['Fatigue',sf.fatigue_score,sf.fatigue_level]].forEach(([n,v,l])=>{
+    const row=document.createElement('div'); row.className='gauge';
+    row.appendChild(gauge(v,l));
+    const sub = n==='Stress' ? 'vagal withdrawal + sympathetic shift' : 'sustained low HRV + downward trend';
+    row.insertAdjacentHTML('beforeend',
+      `<div class="gl"><span class="eyebrow">${n}</span><div class="lvl ${l}">${l}</div><div class="gsub">${sub}</div></div>`);
+    g.appendChild(row);
+  });
+}
+
+/* ---------- Metric tiles ---------- */
+const td=DATA.time_domain||{}, fd=DATA.freq_domain||{}, base=DATA.baseline||{};
+function pct(obs,b){ return (obs==null||!b)?null:(obs-b)/b*100; }
+// adverseWhenUp: does an increase indicate worse (more stress)?
+const tileDefs=[
+  {k:'Mean HR', v:td.mean_hr_bpm, u:'bpm', b:base.mean_hr_bpm, d:0, adverseUp:true},
+  {k:'RMSSD', v:td.rmssd_ms, u:'ms', b:base.rmssd_ms, d:1, adverseUp:false},
+  {k:'stdV', v:td.stdv_ms, u:'ms', b:base.stdv_ms, d:1, adverseUp:false},
+  {k:'HF power', v:fd.hf_power_ms2, u:'ms²', b:base.hf_power_ms2, d:0, adverseUp:false},
+  {k:'LF/HF', v:fd.lf_hf_ratio, u:'', b:base.lf_hf_ratio, d:2, adverseUp:true},
+  {k:'Baevsky SI', v:DATA.baevsky_stress_index, u:'', b:base.stress_index, d:0, adverseUp:true},
+];
+$('#tiles').innerHTML = tileDefs.map(t=>{
+  const ch=pct(t.v,t.b);
+  let cls='neutral', arw='→';
+  if(ch!=null && Math.abs(ch)>=1){
+    const up=ch>0; arw=up?'▲':'▼';
+    const adverse = up===t.adverseUp;
+    cls = adverse?'adverse':'favorable';
+  }
+  const chTxt = ch==null?'no baseline':`${arw} ${fmt(Math.abs(ch),0)}% vs base`;
+  return `<div class="tile">
+    <div class="tk">${t.k}</div>
+    <div class="tv">${fmt(t.v,t.d)}<u>${t.u}</u></div>
+    <div class="td ${cls}">${chTxt}</div>
+    <div class="tbase">rest ${fmt(t.b,t.d)}${t.u}</div>
+  </div>`;
+}).join('');
+
+/* ---------- Canvas charts ---------- */
+function setup(c,h){ const dpr=window.devicePixelRatio||1; const w=c.clientWidth;
+  c.width=w*dpr; c.height=h*dpr; const x=c.getContext('2d'); x.scale(dpr,dpr); return [x,w,h]; }
+function axes(x,w,h,pad){ x.strokeStyle=css('--grid'); x.lineWidth=1;
+  for(let i=0;i<=3;i++){const y=pad+ (h-2*pad)*i/3; x.beginPath();x.moveTo(pad,y);x.lineTo(w-pad,y);x.stroke();} }
+function line(cvId, xs, ys, opts={}){
+  const c=$(cvId); const [x,w,h]=setup(c,150); const pad=16;
+  if(!xs || xs.length<2){ axes(x,w,h,pad); x.fillStyle=css('--muted');
+    x.font='12px '+css('--mono'); x.textAlign='center'; x.textBaseline='middle';
+    x.fillText('not enough data yet', w/2, h/2); return; }
+  const xmin=Math.min(...xs),xmax=Math.max(...xs);
+  let ymin=Math.min(...ys),ymax=Math.max(...ys); const padY=(ymax-ymin)*0.18||1; ymin-=padY;ymax+=padY;
+  const px=v=>pad+(w-2*pad)*(v-xmin)/(xmax-xmin||1);
+  const py=v=>h-pad-(h-2*pad)*(v-ymin)/(ymax-ymin||1);
+  axes(x,w,h,pad);
+  // area
+  const grad=x.createLinearGradient(0,pad,0,h-pad);
+  const tc=css('--trace');
+  grad.addColorStop(0, hex(tc,.24)); grad.addColorStop(1, hex(tc,0));
+  x.beginPath(); x.moveTo(px(xs[0]),py(ys[0]));
+  for(let i=1;i<xs.length;i++) x.lineTo(px(xs[i]),py(ys[i]));
+  x.lineTo(px(xs[xs.length-1]),h-pad); x.lineTo(px(xs[0]),h-pad); x.closePath();
+  x.fillStyle=grad; x.fill();
+  // trend baseline (dashed) if provided
+  if(opts.baseline!=null){ x.setLineDash([4,4]); x.strokeStyle=css('--faint'); x.lineWidth=1;
+    x.beginPath(); x.moveTo(pad,py(opts.baseline)); x.lineTo(w-pad,py(opts.baseline)); x.stroke(); x.setLineDash([]); }
+  // stroke
+  x.beginPath(); x.moveTo(px(xs[0]),py(ys[0]));
+  for(let i=1;i<xs.length;i++) x.lineTo(px(xs[i]),py(ys[i]));
+  x.strokeStyle=tc; x.lineWidth=1.8; x.lineJoin='round'; x.stroke();
+  // endpoint
+  const lx=px(xs[xs.length-1]),ly=py(ys[ys.length-1]);
+  x.fillStyle=tc; x.beginPath(); x.arc(lx,ly,3.4,0,7); x.fill();
+  x.fillStyle=css('--surface'); x.beginPath(); x.arc(lx,ly,1.4,0,7); x.fill();
+}
+function hex(v,a){ // v is a hex like #f0809f (computed styles return hex or rgb)
+  if(v.startsWith('#')){const n=parseInt(v.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;return `rgba(${r},${g},${b},${a})`;}
+  return v.replace('rgb','rgba').replace(')',`,${a})`);
+}
+function renderCharts(){
+  line('#tacho', DATA.tachogram.t, DATA.tachogram.rr);
+  const tr2=DATA.rmssd_trend;
+  line('#trend', tr2.window_centers_s, tr2.windows, {baseline: base.rmssd_ms});
+}
+$('#chDur').textContent = `${fmt(sq.duration_s/60,1)} min · ${DATA.beats_used} beats`;
+const slope=DATA.rmssd_trend.slope_per_min;
+$('#chSlope').textContent = slope==null?'—':`${(slope*100).toFixed(1)}% / min · dashed = rest`;
+
+/* ---------- Evidence + references ---------- */
+const refKeys=Object.keys(sf.references);
+const refNum={}; refKeys.forEach((k,i)=>refNum[sf.references[k]]=i+1);
+function marks(cites){ const ns=cites.map(c=>refNum[c]).filter(Boolean).sort((a,b)=>a-b); return ns.length?`<sup>[${ns.join(', ')}]</sup>`:''; }
+function evBlock(outcome, tag, level){
+  const items=sf.evidence.filter(e=>e.outcome===outcome);
+  if(!items.length) return '';
+  return `<div class="evgroup">
+    <div class="gh"><span class="tag ${tag}">${outcome}</span><span class="glvl">${items.length} background descriptions</span></div>
+    <ul class="ev">${items.map(e=>`<li><span class="mk"></span><span>${e.statement} ${marks(e.citations)}</span></li>`).join('')}</ul>
+  </div>`;
+}
+$('#evStress').innerHTML = evBlock('stress','stress',sf.stress_level);
+$('#evFatigue').innerHTML = evBlock('fatigue','fatigue',sf.fatigue_level);
+$('#refList').innerHTML = refKeys.map(k=>`<li>${sf.references[k]}</li>`).join('');
+
+/* ---------- Footer notes ---------- */
+$('#whatsnew').innerHTML = [
+  '<b>Signal-quality gate</b> — beat-level SQI must pass before any score is trusted.',
+  '<b>Personalized threshold rule</b> — a transparent 2-of-3 vagal-withdrawal test against each user\'s own resting baseline, in real ms.',
+  '<b>Respiration confound check</b> — flags HF power when breathing sits at a band edge.',
+  '<b>Background references</b> — retained from the prototype; separate from the evaluated checks above.',
+].map(t=>`<li>${t}</li>`).join('');
+const lims = (sf.notes&&sf.notes.length?sf.notes:[]).concat([
+  'Stress and fatigue are heuristic, baseline-relative estimates from HRV — not clinical diagnoses.',
+  'Optical pulse sensing is sensitive to motion, contact and ambient light. This page uses sample data for a VR research demonstration.',
+]);
+$('#limits').innerHTML = lims.map(t=>`<li>${t}</li>`).join('');
+
+/* ---------- History (per-user, across sessions) ---------- */
+function levelOf(v){ return v==null?'':v<33?'Low':v<66?'Moderate':'High'; }
+function colorForLevel(l){ return l==='High'?css('--crit'):l==='Moderate'?css('--warn'):css('--good'); }
+function bars(cvId, vals, cur){
+  const c=$(cvId); const [x,w,h]=setup(c,120); const pad=16;
+  axes(x,w,h,pad);
+  const n=vals.length; if(!n) return;
+  const gap=6, bw=Math.max(4,(w-2*pad)/n - gap);
+  vals.forEach((v,i)=>{
+    const val=v==null?0:v;
+    const bh=(h-2*pad)*Math.max(0,Math.min(1,val/100));
+    const bx=pad + i*((w-2*pad)/n) + gap/2, by=h-pad-bh;
+    x.fillStyle=colorForLevel(levelOf(v));
+    if(i!==cur) x.globalAlpha=0.45;
+    roundRect(x,bx,by,bw,bh,3); x.fill(); x.globalAlpha=1;
+    if(i===cur){ x.strokeStyle=css('--ink'); x.lineWidth=1.4; roundRect(x,bx,by,bw,bh,3); x.stroke(); }
+  });
+}
+function roundRect(x,rx,ry,rw,rh,r){ r=Math.min(r,rw/2,rh/2||r);
+  x.beginPath();x.moveTo(rx+r,ry);x.arcTo(rx+rw,ry,rx+rw,ry+rh,r);x.arcTo(rx+rw,ry+rh,rx,ry+rh,r);
+  x.arcTo(rx,ry+rh,rx,ry,r);x.arcTo(rx,ry,rx+rw,ry,r);x.closePath(); }
+function renderHistory(){
+  if(H.length<2){ return; }
+  $('#histCard').style.display='';
+  $('#histCount').textContent = `· ${H.length} sessions for ${DATA.user||'user'}`;
+  const cur = H.findIndex(e=>e.current) ;
+  const curIdx = cur<0 ? H.length-1 : cur;
+  bars('#hStress', H.map(e=>e.stress), curIdx);
+  bars('#hFatigue', H.map(e=>e.fatigue), curIdx);
+  const rows = H.map((e,i)=>{
+    const sl=levelOf(e.stress), fl=levelOf(e.fatigue);
+    return `<tr class="${i===curIdx?'cur':''}">
+      <td class="mono">${e.label||e.ts||''}</td>
+      <td>${e.context||'—'}</td>
+      <td><span class="pill ${sl}">${e.stress==null?'—':Math.round(e.stress)}</span></td>
+      <td><span class="pill ${fl}">${e.fatigue==null?'—':Math.round(e.fatigue)}</span></td>
+      <td class="mono">${e.rmssd==null?'—':fmt(e.rmssd,1)}</td>
+      <td class="mono">${e.hr==null?'—':fmt(e.hr,0)}</td></tr>`;
+  }).reverse().join('');
+  $('#histTable').innerHTML = `<table><thead><tr>
+    <th>Session</th><th>Context</th><th>Stress</th><th>Fatigue</th><th>RMSSD</th><th>HR</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ---------- Score breakdown (traceable "how the number was computed") ---------- */
+function bdSentence(kind, level, rows){
+  const lead = kind==='stress' ? 'Stress' : 'Fatigue';
+  if(!rows.length) return `${lead}: not enough data to score this session.`;
+  const drivers = rows.filter(r=>r.contribution>=40).map(r=>{
+    const d = r.deviation_pct!=null ? ` ${r.deviation_pct>0?'+':''}${Math.round(r.deviation_pct)}%` : '';
+    return `${r.label} ${r.direction}${d}`;
+  });
+  if(!drivers.length) return `${lead} is ${level}: your signals stayed close to your resting baseline.`;
+  return `${lead} is ${level}, driven mainly by ${drivers.join(', ')} versus your resting baseline.`;
+}
+function renderBreakdown(kind){
+  const sf = DATA.stress_fatigue || {};
+  const rows = sf[kind+'_breakdown'] || [];
+  const score = sf[kind+'_score'], level = sf[kind+'_level'];
+  const el = $(kind==='stress' ? '#bdStress' : '#bdFatigue');
+  if(!rows.length){el.innerHTML=`<div class="bd-title">${kind==='stress'?'Stress':'Fatigue'} · example score ${score==null?'—':Math.round(score)}/100</div><p class="bd-say">The inherited sample does not include the component breakdown. This score cannot be audited from this preview.</p>`;return;}
+  const body = rows.map(r=>{
+    const dp = r.observed==null ? '—' : (Math.abs(r.observed)>=100 ? fmt(r.observed,0)
+              : (r.unit==='' ? fmt(r.observed,2) : fmt(r.observed,1)));
+    const base = r.baseline==null ? '' : ` vs base ${Math.abs(r.baseline)>=100?fmt(r.baseline,0):fmt(r.baseline,2)}`;
+    const dev = r.deviation_pct==null ? '' : ` (${r.deviation_pct>0?'+':''}${Math.round(r.deviation_pct)}%)`;
+    return `<div class="bd-row">
+        <span class="bd-l">${r.label} ${r.direction}</span>
+        <span class="bd-bar"><i style="width:${Math.max(0,Math.min(100,Math.round(r.contribution)))}%"></i></span>
+        <span class="bd-c">${Math.round(r.contribution)}</span>
+      </div>
+      <div class="bd-sub">now ${dp}${r.unit?(' '+r.unit):''}${base}${dev} · full scale: ${r.full_scale}</div>`;
+  }).join('');
+  el.innerHTML = `<div class="bd-title ${level}">${kind==='stress'?'Stress':'Fatigue'} · ${score==null?'—':Math.round(score)}/100 <b>${level}</b></div>
+    <p class="bd-say">${bdSentence(kind, level, rows)}</p>
+    ${body || '<div class="bd-sub" style="margin-left:0">No components (needs a baseline / longer recording).</div>'}
+    <div class="bd-avg">Average of ${rows.length} component${rows.length===1?'':'s'} = <b>${score==null?'—':Math.round(score)}</b> / 100</div>`;
+}
+
+/* ---------- VR user-research example ---------- */
+function techVerdict(sf){
+  const s=sf.stress_level, f=sf.fatigue_level;
+  if(s==='High'||f==='High') return {fit:'Follow up with participants', cls:'warn'};
+  if(s==='Moderate'||f==='Moderate') return {fit:'Moderately demanding', cls:'warn'};
+  return {fit:'Well-tolerated', cls:'good'};
+}
+function renderTech(){
+  const sel = $('#techSelect');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— select technology —</option>' +
+    TECH.map(t=>`<option value="${t.key}">${t.label}</option>`).join('');
+  const ctx = (DATA.context||'').toLowerCase();
+  const guess = TECH.find(t => ctx.includes(t.key) || ctx.includes(t.label.toLowerCase().split(' ')[0]));
+  function draw(){
+    const t = TECH.find(x=>x.key===sel.value);
+    const el = $('#techBody');
+    if(!t){ el.className='te-empty'; el.textContent='Pick the technology you were using to see a human-centred evaluation of it, based on your physiology.'; renderDesign(null); return; }
+    const sf = DATA.stress_fatigue || {};
+    const v = techVerdict(sf);
+    const refs = (t.refs||[]).map(r=>`<li><span class="mk"></span><div><div class="rf-find">${r.finding||''}</div><div class="rf-cite">${r.cite}</div></div></li>`).join('');
+    el.className='';
+    el.innerHTML = `
+      <div class="te-verdict">
+        <span class="te-pill ${v.cls}">${v.fit}</span>
+        <p class="te-say">This <b>${t.label}</b> example uses sample physiology with <b>${sf.stress_level.toLowerCase()}</b> stress and fatigue estimates. Treat these as prompts for further investigation. HRV alone cannot show that VR caused stress or that a design is unsuitable.</p>
+      </div>
+      <div class="te-grid">
+        <div class="te-act"><span class="lbl">Suggested adaptation</span><span class="act">${t.action}</span></div>
+        <div class="te-ref">
+          <span class="lbl">How to use this suggestion</span>
+          ${refs ? `<ul class="te-refs">${refs}</ul>` : `<div class="te-empty2">Compare one design change at a time. Ask about comfort and workload, record task performance, and review movement or poor sensor contact before interpreting HRV.</div>`}
+        </div>
+      </div>`;
+    renderDesign(t.key);
+  }
+  sel.addEventListener('change', draw);
+  if(guess) sel.value = guess.key;
+  draw();
+}
+
+/* ---------- Suggestions for your next VR study (corpus-derived, keyed to stress/fatigue) ---------- */
+function activeConditions(sf){
+  const c=[];
+  if(sf.stress_level==='High') c.push('stress_high');
+  else if(sf.stress_level==='Moderate') c.push('stress_moderate');
+  if(sf.fatigue_level==='High') c.push('fatigue_high');
+  else if(sf.fatigue_level==='Moderate') c.push('fatigue_moderate');
+  if(sf.stress_level==='Low' && sf.fatigue_level==='Low') c.push('low_all');
+  if(!c.length) c.push('low_all');
+  return c;
+}
+const COND_LABEL = {stress_high:'high stress', stress_moderate:'moderate stress',
+  fatigue_high:'high fatigue', fatigue_moderate:'moderate fatigue', low_all:'well-tolerated'};
+function renderDesign(techKey){
+  const card = $('#designCard'); if(!card) return;
+  if(!DESIGN.length){ card.style.display='none'; return; }
+  const sf = DATA.stress_fatigue || {};
+  const conds = activeConditions(sf);
+  const rank = {stress_high:0, fatigue_high:0, stress_moderate:1, fatigue_moderate:1, low_all:2};
+  let items = DESIGN.filter(p => (p.applies_to||[]).some(a => conds.includes(a)));
+  if(techKey) items = items.filter(p => (p.tech||[]).includes(techKey) || (p.tech||[]).includes('all'));
+  items.sort((a,b)=>{
+    const pr = p => Math.min(...(p.applies_to.filter(x=>conds.includes(x)).map(x=>rank[x]??3)).concat([3]));
+    return pr(a)-pr(b);
+  });
+  const shown = items.slice(0, 6), extra = items.length - shown.length;
+  $('#designCond').textContent = 'for ' + conds.map(c=>COND_LABEL[c]).join(' + ')
+    + (techKey ? ' · ' + ((TECH.find(t=>t.key===techKey)||{}).label || techKey) : '');
+  const body = $('#designBody');
+  if(!shown.length){
+    body.innerHTML = '<div class="dg-empty">Your physiology looks well-tolerated — no adaptations needed right now.</div>';
+  } else {
+    body.innerHTML = shown.map(p=>{
+      const refs = (p.refs||[]).slice(0,2).map(r=>r.url ? `<a href="${r.url}" target="_blank" rel="noopener">${r.cite}</a>` : r.cite).filter(Boolean).join(' · ');
+      return `<div class="dg-item">
+        <div class="dg-title">${p.title}</div>
+        <div class="dg-say">${p.guidance}</div>
+        ${refs ? `<div class="dg-refs">${refs}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  $('#designNote').textContent =
+    (extra>0 ? `+${extra} more principle${extra===1?'':'s'} apply. ` : '') +
+    'Comfort suggestions cite platform guidance. MOND research proposals are hypotheses to test. ' +
+    (techKey ? 'Tailored to the selected technology.' : 'Pick a technology above to tailor these.');
+}
+
+/* ---------- Teen-friendly plain-language check-in ---------- */
+function lvlWord(score){ return score==null ? '—' : (score<33?'Low':(score<66?'Medium':'High')); }
+function lvlCls(score){ return score==null ? '' : (score<33?'good':(score<66?'warn':'crit')); }
+
+// Level-reactive chip emoji: a small change across a band swaps the face.
+const CHIP_EMO = {
+  stress:  {lo:'😌', mid:'😕', hi:'😣', none:'🫀'},
+  fatigue: {lo:'😃', mid:'😪', hi:'😴', none:'🥱'},
+  cog:     {lo:'😎', mid:'🤔', hi:'🤯', none:'🧠'},
+  energy:  {lo:'😌', mid:'🙂', hi:'⚡', none:'⚡'},
+};
+function chipEmoji(cat, sc){
+  const k = sc==null ? 'none' : (sc<33?'lo':sc<66?'mid':'hi');
+  return CHIP_EMO[cat][k];
+}
+
+// Driver-aware, finely-graded mood: the dominant signal + its intensity pick the
+// face, so even minor shifts in the data move the expression and the words.
+function moodFor(sf, I){
+  const parts = [
+    ['stress',  sf.stress_score],
+    ['fatigue', sf.fatigue_score],
+    ['cog',     (I.cognitive_load||{}).score],
+    ['energy',  (I.emotional_arousal||{}).score],
+  ].filter(p => p[1]!=null);
+  if(!parts.length){
+    return {emo:'🤔', vibe:'No read yet', head:'Let’s get a clearer read.',
+      say:'We couldn’t pick up enough signal this time. Try a longer recording while sitting still, with the ear-clip fitting snugly.'};
+  }
+  if(sf.gated){
+    return {emo:'🌀', vibe:'Fuzzy read', head:'This reading’s a bit fuzzy.',
+      say:'The signal was noisy or too short this time, so take these numbers lightly. Try a longer recording while still, with a snug ear-clip.'};
+  }
+  const hi = Math.max(...parts.map(p=>p[1]));
+  const driver = parts.reduce((a,b)=> b[1]>a[1] ? b : a)[0];
+  if(hi < 18) return {emo:'😄', vibe:'Feeling great', head:'You’re feeling great and totally relaxed.',
+    say:'Everything’s calm and balanced right now — a lovely place to be. Soak it up, and remember what got you here.'};
+  if(hi < 33) return {emo:'😌', vibe:'Chill', head:'You’re calm and settled.',
+    say:'Your body looks relaxed and steady — a really nice baseline to be at.'};
+  // hi >= 33: choose by dominant driver and three intensity tiers (mod/high/peak).
+  const tier = hi < 55 ? 0 : hi < 78 ? 1 : 2;
+  const M = {
+    fatigue: [
+      {emo:'😪', vibe:'A bit tired',      head:'You’re running a little low on energy.'},
+      {emo:'😴', vibe:'Pretty wiped',     head:'You seem pretty worn out.'},
+      {emo:'🥱', vibe:'Running on empty', head:'You’re really running on empty.'},
+    ],
+    stress: [
+      {emo:'😕', vibe:'A little tense',       head:'You’re carrying a little tension.'},
+      {emo:'😣', vibe:'Feeling the pressure', head:'Looks like you’re feeling the pressure.'},
+      {emo:'😥', vibe:'Really stressed',      head:'Your body’s pretty stressed right now.'},
+    ],
+    cog: [
+      {emo:'🤔', vibe:'Focused',            head:'Your brain’s locked in and working.'},
+      {emo:'😵‍💫', vibe:'Brain working hard', head:'Your brain’s working really hard.'},
+      {emo:'🤯', vibe:'Brain maxed',        head:'Your brain’s pretty much maxed out.'},
+    ],
+    energy: [
+      {emo:'🙂', vibe:'Energized',  head:'You’re nicely energized.'},
+      {emo:'😅', vibe:'Amped up',   head:'Looks like you’re amped up.'},
+      {emo:'😳', vibe:'Super wired', head:'You’re running super wired right now.'},
+    ],
+  };
+  const SAY = {
+    fatigue:'Tiredness is the main thing showing up. Water, a proper break, and an earlier night will help you recharge.',
+    stress:'Your body’s carrying some tension. A slow breath (in for 4, out for 6) and a short pause usually take the edge off.',
+    cog:'Your brain’s doing heavy lifting. Try one thing at a time, with a two-minute breather between chunks.',
+    energy:'You’re running on high energy — great in short bursts. Channel it, then give yourself time to wind down.',
+  };
+  const pick = M[driver][tier];
+  return {emo:pick.emo, vibe:pick.vibe, head:pick.head, say:SAY[driver]};
+}
+
+function renderCheckin(){
+  const el = $('#checkin'); if(!el) return;
+  const sf = DATA.stress_fatigue || {}, I = DATA.indicators || {};
+  const m = moodFor(sf, I);
+  const chips = [
+    ['Stress','stress',sf.stress_score], ['Tiredness','fatigue',sf.fatigue_score],
+    ['Brain effort','cog',(I.cognitive_load||{}).score], ['Energy','energy',(I.emotional_arousal||{}).score],
+  ].filter(c=>c[2]!=null).map(([label,cat,sc])=>
+    `<span class="ci-chip ${lvlCls(sc)}"><span class="ci-emo">${chipEmoji(cat,sc)}</span>${label} <span class="ci-lv">${lvlWord(sc)}</span></span>`
+  ).join('');
+  el.innerHTML = `
+    <div class="mood"><span class="emo">${m.emo}</span></div>
+    <div class="body">
+      <div class="vibe">Sample session · illustrative estimates</div>
+      <h2 class="ci-head">A pattern to explore with the participant</h2>
+      <p class="ci-say">The example suggests higher strain relative to baseline. Ask how the participant felt and check task demands and recording quality before interpreting it.</p>
+      ${chips ? `<div class="ci-chips">${chips}</div>` : ''}
+    </div>`;
+}
+
+/* ---------- More physiological indicators (Georgieva-Tsaneva 2025) ---------- */
+function renderIndicators(){
+  const card = $('#indicatorsCard'); if(!card) return;
+  const I = DATA.indicators || {}, nl = DATA.nonlinear_domain || {};
+  const hasNl = ['sampen','dfa_alpha1','dfa_alpha2','hurst','higuchi_fd'].some(k=>nl[k]!=null);
+  if(!I.physiological_state && !I.autonomic_balance && !I.regulation_complexity
+     && !I.cognitive_load && !I.emotional_arousal && !hasNl){
+    card.style.display='none'; return;
+  }
+  const clamp = x => Math.max(0, Math.min(100, Math.round(x)));
+  const st = I.physiological_state;
+  const stCls = st ? ({'Rest':'good','Physical load':'warn','Mental stress':'crit'}[st.state]||'') : '';
+  $('#indState').innerHTML = st
+    ? `<div class="ind-h">Physiological state (estimated)</div>
+       <div class="ind-plain">What your body seems to be doing right now</div>
+       <span class="ind-badge ${stCls}">${st.state}</span>
+       <div class="ind-sub" style="margin-top:8px">confidence: ${st.confidence}</div>
+       <div class="ind-rat">${(st.rationale||[]).map(r=>'• '+r).join('<br>')}</div>`
+    : `<div class="ind-h">Physiological state</div><div class="ind-sub">Not enough data to estimate.</div>`;
+
+  const cl = I.cognitive_load;
+  const clCls = cl ? ({'Low':'good','Moderate':'warn','High':'crit'}[cl.level]||'') : '';
+  $('#indCog').innerHTML = cl
+    ? `<div class="ind-h">Cognitive load</div>
+       <div class="ind-plain">How hard your brain’s working</div>
+       <span class="ind-badge ${clCls}">${cl.level} · ${clamp(cl.score)}/100</span>
+       <div class="ind-scale"><i style="left:${clamp(cl.score)}%"></i></div>
+       <div class="ind-sub">mental workload — HF↓, LF/HF↑, HR↑ vs baseline${cl.baseline_used?'':' (absolute — no baseline)'} · confidence ${cl.confidence}</div>`
+    : `<div class="ind-h">Cognitive load</div><div class="ind-sub">Not enough data.</div>`;
+
+  const em = I.emotional_arousal;
+  const emCls = em ? ({'Calm':'good','Moderate':'warn','Activated':'crit'}[em.level]||'') : '';
+  $('#indEmotion').innerHTML = em
+    ? `<div class="ind-h">Emotional arousal</div>
+       <div class="ind-plain">How amped-up vs chilled you feel</div>
+       <span class="ind-badge ${emCls}">${em.level} · ${clamp(em.score)}/100</span>
+       <div class="ind-scale"><i style="left:${clamp(em.score)}%"></i></div>
+       <div class="ind-sub">calm ⟵ arousal ⟶ activated · valence (pleasant vs unpleasant) is <b>not</b> inferable from HRV alone</div>`
+    : `<div class="ind-h">Emotional arousal</div><div class="ind-sub">Not enough data.</div>`;
+
+  const ab = I.autonomic_balance;
+  const abCls = ab ? (ab.level.indexOf('Parasympathetic')===0 ? 'good' : (ab.level==='Balanced'?'warn':'crit')) : '';
+  $('#indBalance').innerHTML = ab
+    ? `<div class="ind-h">Autonomic balance</div>
+       <div class="ind-plain">Rest-and-digest vs go-go-go mode</div>
+       <span class="ind-badge ${abCls}">${ab.level}</span>
+       <div class="ind-scale"><i style="left:${Math.max(0,Math.min(100,Math.round(ab.score)))}%"></i></div>
+       <div class="ind-sub">rest ⟵ sympathovagal ⟶ activated · LF/HF ${fmt(ab.lf_hf,2)}${ab.reliable?'':' (short record)'}</div>`
+    : `<div class="ind-h">Autonomic balance</div><div class="ind-sub">Needs ≥2 min for a reliable LF/HF.</div>`;
+
+  const rc = I.regulation_complexity;
+  const rcCls = rc ? ({'Robust':'good','Reduced':'warn','Compromised':'crit'}[rc.level]||'') : '';
+  $('#indComplex').innerHTML = rc
+    ? `<div class="ind-h">Regulation complexity</div>
+       <div class="ind-plain">How flexible &amp; adaptable your heart rhythm is</div>
+       <span class="ind-badge ${rcCls}">${rc.level} · ${rc.score==null?'—':Math.round(rc.score)}/100</span>
+       <div class="ind-sub" style="margin-top:10px">Fractal organisation of your rhythm — higher is more adaptable; a drop marks a stress-like loss of long-range structure.</div>
+       <div class="ind-sub" style="margin-top:6px">DFA α1 ${fmt(rc.dfa_alpha1,2)} · Hurst ${fmt(rc.hurst,2)}</div>`
+    : `<div class="ind-h">Regulation complexity</div><div class="ind-sub">Needs ≥60 beats.</div>`;
+
+  const cells = [['SampEn',nl.sampen],['DFA α1',nl.dfa_alpha1],['DFA α2',nl.dfa_alpha2],
+                 ['Hurst',nl.hurst],['Higuchi FD',nl.higuchi_fd]];
+  $('#nlTable').innerHTML = cells.map(([k,v])=>
+    `<div class="nl-cell"><div class="nl-v">${v==null?'—':fmt(v,2)}</div><div class="nl-k">${k}</div></div>`).join('');
+
+  const an = I.anomaly;
+  $('#indAnom').innerHTML = (an && an.atypical)
+    ? `<div class="ind-anom"><b>Atypical autonomic profile.</b> ${(an.reasons||[]).join('; ')}. Worth a second reading.</div>` : '';
+  $('#indSrc').textContent = I.source ? `Indicators & fractal anchors: ${I.source}` : '';
+}
+
+renderCheckin(); renderBreakdown('stress'); renderBreakdown('fatigue'); renderIndicators(); renderTech();
+window.addEventListener('resize', ()=>{ if($('#pageHabits') && $('#pageHabits').style.display!=='none') drawHabits(); });
+
+/* ---------- Habits & trends page ---------- */
+const HB_METRICS = [
+  {key:'stress',   label:'Stress',              dir:'bad'},
+  {key:'fatigue',  label:'Fatigue',             dir:'bad'},
+  {key:'rest',     label:'Rest / recovery',     dir:'good'},
+  {key:'exercise', label:'Exercise / activity', dir:'good'},
+];
+let hbReady = false;
+function hbInit(){
+  const sel = $('#hbMetric'); if(!sel) return;
+  sel.innerHTML = HB_METRICS.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+  sel.addEventListener('change', drawHabits);
+  const tg = $('#hbActive'); if(tg) tg.addEventListener('change', drawHabits);
+  hbReady = true;
+}
+function showPage(p){
+  const s = (p === 'session');
+  $('#pageSession').style.display = s ? '' : 'none';
+  $('#pageHabits').style.display = s ? 'none' : '';
+  $('#tabSession').classList.toggle('active', s);
+  $('#tabHabits').classList.toggle('active', !s);
+  if(!s) drawHabits();
+}
+function hbCurrent(){ const sel=$('#hbMetric'); const k=sel?sel.value:'stress'; return HB_METRICS.find(m=>m.key===k)||HB_METRICS[0]; }
+function hbColor(v, dir){
+  if(v==null || isNaN(v)) return css('--surface-2');
+  const t = Math.max(0.10, Math.min(1, v/100));
+  const rgb = dir==='bad' ? [200,90,90] : [90,162,108];
+  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${(0.12 + 0.88*t).toFixed(2)})`;
+}
+function hbParse(s){ const p=(s||'').split('-'); return p.length===3 ? new Date(+p[0],+p[1]-1,+p[2]) : null; }
+function hbFmt(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function hbKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function hbMonday(d){ const x=new Date(d); const off=(x.getDay()+6)%7; x.setDate(x.getDate()-off); x.setHours(0,0,0,0); return x; }
+
+function drawHabits(){
+  if(!hbReady) return;
+  const m = hbCurrent();
+  $('#hbTitle').textContent = m.label + ' over time';
+  $('#hbCalTitle').textContent = 'Session calendar · ' + m.label;
+  $('#hbProgTitle').textContent = 'Weekly ' + m.label.toLowerCase();
+
+  const rows = H.filter(e=>e.date && e[m.key]!=null)
+                .map(e=>({date:e.date, d:hbParse(e.date), v:e[m.key], time:e.time, ctx:e.context}))
+                .filter(r=>r.d).sort((a,b)=>a.d-b.d);
+  const clear = () => ['#hbCal','#hbProg'].forEach(id=>{const c=$(id);const x=c.getContext('2d');c.width=c.clientWidth||600;x.clearRect(0,0,c.width,c.height);});
+  if(rows.length < 1){
+    $('#hbStats').innerHTML=''; $('#hbRecent').innerHTML=''; clear();
+    $('#hbNote').textContent = 'No sessions with this metric yet — record a few to see your trends here.';
+    return;
+  }
+
+  const byDay = {}; rows.forEach(r=>{ (byDay[r.date]=byDay[r.date]||[]).push(r.v); });
+  const dayAvg = {}; Object.keys(byDay).forEach(k=> dayAvg[k]= byDay[k].reduce((a,b)=>a+b,0)/byDay[k].length);
+  const vals = rows.map(r=>r.v);
+  const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+  const latest = rows[rows.length-1].d;
+  const weekAgo = new Date(latest); weekAgo.setDate(weekAgo.getDate()-6);
+  const wk = rows.filter(r=>r.d>=weekAgo);
+  const wkAvg = wk.length ? wk.reduce((a,b)=>a+b.v,0)/wk.length : null;
+  const best = m.dir==='bad' ? rows.reduce((a,b)=> b.v<a.v?b:a) : rows.reduce((a,b)=> b.v>a.v?b:a);
+  const activeDays = Object.keys(byDay).length;
+
+  $('#hbStats').innerHTML = [
+    ['Average', Math.round(avg), 'all sessions'],
+    ['This week', wkAvg==null?'—':Math.round(wkAvg), wk.length+' session'+(wk.length===1?'':'s')],
+    [m.dir==='bad'?'Best (lowest)':'Best (highest)', Math.round(best.v), hbFmt(best.d)],
+    ['Sessions', rows.length, activeDays+' active day'+(activeDays===1?'':'s')],
+  ].map(([k,v,s])=>`<div class="hb-stat"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+
+  $('#hbRecent').innerHTML = rows.slice().reverse().slice(0,8).map(r=>
+    `<div class="hb-rec"><div><span class="d">${hbFmt(r.d)}</span> <span class="t">${r.time||''}</span></div>
+     <span class="val" style="background:${hbColor(r.v,m.dir)}">${Math.round(r.v)}</span></div>`).join('');
+
+  hbHeatmap(dayAvg, rows, m);
+  hbProgress(rows, m);
+  const proxy = (m.key==='rest'||m.key==='exercise') ? ' (an inferred proxy from your autonomic signals)' : '';
+  $('#hbNote').textContent = `Each square is a day's average ${m.label.toLowerCase()}${proxy}; darker = higher. The band on the chart is that week's range.`;
+  $('#hbLegend').innerHTML = `less <i style="background:${hbColor(15,m.dir)}"></i><i style="background:${hbColor(45,m.dir)}"></i><i style="background:${hbColor(75,m.dir)}"></i><i style="background:${hbColor(100,m.dir)}"></i> more`;
+}
+
+function hbHeatmap(dayAvg, rows, m){
+  const cv = $('#hbCal'); const dpr = window.devicePixelRatio||1;
+  const start = rows[0].d, end = rows[rows.length-1].d;
+  const s = hbMonday(start);
+  const nWeeks = Math.floor((hbMonday(end) - s)/604800000) + 1;
+  const cell=13, gap=3, top=20, left=30;
+  const W = left + nWeeks*(cell+gap) + 6, Hgt = top + 7*(cell+gap) + 2;
+  cv.style.width = W+'px'; cv.width = W*dpr; cv.height = Hgt*dpr;
+  const x = cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,Hgt);
+  x.fillStyle=css('--muted'); x.font='9px '+css('--mono'); x.textAlign='right'; x.textBaseline='middle';
+  ['Mon','','Wed','','Fri','','Sun'].forEach((lb,i)=>{ if(lb) x.fillText(lb, left-6, top+i*(cell+gap)+cell/2); });
+  x.textAlign='left'; x.textBaseline='alphabetic';
+  let lastMonth=-1;
+  const cur = new Date(s);
+  for(let w=0; w<nWeeks; w++){
+    if(cur.getMonth()!==lastMonth){ lastMonth=cur.getMonth();
+      x.fillStyle=css('--muted'); x.fillText(cur.toLocaleDateString('en-US',{month:'short'}), left+w*(cell+gap), top-9); }
+    for(let d=0; d<7; d++){
+      const day = new Date(cur); day.setDate(day.getDate()+d);
+      const v = dayAvg[hbKey(day)];
+      const cx=left+w*(cell+gap), cy=top+d*(cell+gap);
+      x.fillStyle = (day>=start && day<=end && v!=null) ? hbColor(v,m.dir) : css('--surface-2');
+      roundRect(x,cx,cy,cell,cell,3); x.fill();
+    }
+    cur.setDate(cur.getDate()+7);
+  }
+}
+
+function hbProgress(rows, m){
+  const cv = $('#hbProg'); const dpr = window.devicePixelRatio||1;
+  const W = cv.clientWidth||600, Hgt = 220;
+  cv.width = W*dpr; cv.height = Hgt*dpr;
+  const x = cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,W,Hgt);
+  const wk = {};
+  rows.forEach(r=>{ const k=hbKey(hbMonday(r.d)); (wk[k]=wk[k]||[]).push(r.v); });
+  let weeks = Object.keys(wk).sort();
+  const hideEmpty = $('#hbActive') && $('#hbActive').checked;
+  if(!hideEmpty && weeks.length){
+    const all=[]; let c=hbParse(weeks[0]); const last=hbParse(weeks[weeks.length-1]);
+    while(c<=last){ all.push(hbKey(c)); c.setDate(c.getDate()+7); }
+    weeks = all;
+  }
+  const series = weeks.map(k=>{ const a=wk[k]; if(!a||!a.length) return {k,avg:null};
+    return {k, avg:a.reduce((p,q)=>p+q,0)/a.length, mn:Math.min(...a), mx:Math.max(...a)}; });
+  const pad=30, padR=12, padT=14, padB=26;
+  const xs = i => pad + (W-pad-padR)*(series.length<=1?0.5:i/(series.length-1));
+  const py = v => padT + (Hgt-padT-padB)*(1-v/100);
+  x.strokeStyle=css('--grid'); x.lineWidth=1; x.font='10px '+css('--mono');
+  [0,25,50,75,100].forEach(v=>{ const y=py(v); x.beginPath();x.moveTo(pad,y);x.lineTo(W-padR,y);x.stroke();
+    x.fillStyle=css('--muted'); x.textAlign='right'; x.fillText(v, pad-6, y+3); });
+  const col = m.dir==='bad' ? css('--crit') : css('--good');
+  const pts = series.map((sv,i)=>({i,sv})).filter(o=>o.sv.avg!=null);
+  if(pts.length>=2){
+    x.beginPath();
+    pts.forEach((o,j)=>{ const X=xs(o.i),Y=py(o.sv.mx); j?x.lineTo(X,Y):x.moveTo(X,Y); });
+    for(let j=pts.length-1;j>=0;j--){ x.lineTo(xs(pts[j].i), py(pts[j].sv.mn)); }
+    x.closePath(); x.fillStyle=hex(col,.14); x.fill();
+  }
+  x.beginPath(); pts.forEach((o,j)=>{ const X=xs(o.i),Y=py(o.sv.avg); j?x.lineTo(X,Y):x.moveTo(X,Y); });
+  x.strokeStyle=col; x.lineWidth=2; x.lineJoin='round'; x.stroke();
+  pts.forEach(o=>{ x.fillStyle=col; x.beginPath(); x.arc(xs(o.i),py(o.sv.avg),3,0,7); x.fill(); });
+  x.fillStyle=css('--muted'); x.textAlign='center'; x.font='9px '+css('--mono');
+  const step=Math.max(1,Math.ceil(series.length/6));
+  series.forEach((sv,i)=>{ if(i%step===0) x.fillText(hbFmt(hbParse(sv.k)), xs(i), Hgt-8); });
+}
+hbInit();
+
+/* ---------- Theme handling ---------- */
+function repaint(){ renderGauges(); renderCharts(); renderHistory(); if($('#pageHabits') && $('#pageHabits').style.display!=='none') drawHabits(); }
+repaint();
+const btn=$('#themeBtn');
+btn.addEventListener('click',()=>{
+  const cur=document.documentElement.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  document.documentElement.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  requestAnimationFrame(repaint);
+});
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>requestAnimationFrame(repaint));
+let rt; addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(repaint,120);});
+</script>
+
+</body>
+</html>
