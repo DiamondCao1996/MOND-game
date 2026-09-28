@@ -36,3 +36,11 @@ Touch controls are available on phones and tablets. Clearing browser storage rem
 Run `python -m http.server 8767` in this directory and open `http://localhost:8767/`.
 
 GitHub Pages publishes from the `main` branch root. `.nojekyll` keeps the site static. No server, account, API key or build step is needed to play.
+
+## Shared wellbeing visit
+
+Choose **Visit your bunny** for rest, music, or gardening. An optional check-in takes priority over physiological suggestions. Every completed shared moment earns a seed, even without a sensor; flowers and fireflies unlock through participation. The adventure pauses during the visit. Progress is saved locally and never decreases for missed days or low readings.
+
+To connect on the same Mac, start recording in the updated HRV Sensor app and click **Open MOND**. In the care panel, expand **Connect your sensor**, click **Connect Mac app**, and keep its localhost connection window open. Quit older app versions first if port 8765 is occupied. The game receives a quality-checked summary; it does not upload measurements or store them in browser saves. Simulated and replay readings are labeled. Browsers must allow the connection popup.
+
+`mond-care.js` and `mond-care.css` now accompany `game.html`; include all three when downloading the game for offline use. Test care rules with `node --test test-mond-care.cjs`. Real browser popup behavior and Bluetooth hardware still require end-to-end verification.
